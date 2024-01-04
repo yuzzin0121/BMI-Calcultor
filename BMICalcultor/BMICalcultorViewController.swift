@@ -8,6 +8,7 @@
 import UIKit
 
 enum Status: String {
+    case underWeight = "저체중"
     case normal = "정상"
     case obesity = "비만"
     case highObesity = "고도비만"
@@ -110,7 +111,19 @@ class BMICalcultorViewController: UIViewController {
                      title: "내 정보 리셋하기",
                      backgroundColor: .darkGray)
     }
-
+    
+    @IBAction func userResetButtonClicked(_ sender: UIButton) {
+        UserDefaults.standard.removeObject(forKey: "myNickname")
+        UserDefaults.standard.removeObject(forKey: "myHeight")
+        UserDefaults.standard.removeObject(forKey: "myWeight")
+        
+        [nicknameTextField, heightTextField, weightTextField].forEach {
+            $0?.text = ""
+        }
+        
+        descriptionLabel.text = "당신의 BMI 지수를 알려드릴게요."
+    }
+    
     // 랜덤 BMI 버튼 클릭했을 때
     @IBAction func randomBmiClicked(_ sender: UIButton) {
         let randomHeight = getRandomValue(min: 120, max: 200)
@@ -120,14 +133,21 @@ class BMICalcultorViewController: UIViewController {
         weightTextField.text = (String(format: "%.2f", randomWeight))
     }
     
+    
+    
     // 결과 확인 버튼 클릭했을 때
     @IBAction func showResultButtonClicked(_ sender: UIButton) {
-        let nicknameString = nicknameTextField.text
+        let nickname = nicknameTextField.text!
         let heightString = heightTextField.text
         let weightString = weightTextField.text
         
         // 1. 공백 검사
-        guard let nickname = nicknameString, let height = heightString, let weight = weightString else {
+        guard let height = heightString, let weight = weightString else {
+            alertMessage(title: "공백이 있습니다.", message: "모든 내용을 입력해주세요.", alertType: .alert)
+            return
+        }
+        
+        if nickname == "" {
             alertMessage(title: "공백이 있습니다.", message: "모든 내용을 입력해주세요.", alertType: .alert)
             return
         }
@@ -166,12 +186,16 @@ class BMICalcultorViewController: UIViewController {
         
         let totalResult = getBMIResult(bmi: bmi)
         
+        descriptionLabel.text = "\(trimNickname)님의 BMI 지수를 알려드릴게요."
+        
         self.alertMessage(title: "BMI 계산 결과", message: "\(trimNickname)님의 BMI는 \(bmiResult)으로, \(totalResult)입니다.", alertType: .alert)
     }
     
-    func getBMIResult(bmi: Double) -> String {
+    func getBMIResult(bmi: Double) -> Status.RawValue {
         switch bmi {
-        case 1...25:
+        case 0..<18.5:
+            return Status.underWeight.rawValue
+        case 18.5...25:
             return Status.normal.rawValue
         case 25..<30:
             return Status.obesity.rawValue
